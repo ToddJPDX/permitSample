@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Permit Lookup</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 16px; }
+    h1 { font-size: 1.4rem; }
+    input, select, button { font-size: 1rem; padding: 6px 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+    th { background: #f0f0f0; }
+    #status { color: #666; margin-top: 8px; font-size: 0.9rem; }
+  </style>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <h1>Open Permit Lookup</h1>
+  <label for="street">Choose address:</label>
+  <select id="street">
+    <option value="1221 SW 4th Ave">1221 SW 4th Ave</option>
+    <option value="350 NE Sandy Blvd">350 NE Sandy Blvd</option>
+    <option value="999 Nowhere St">999 Nowhere St</option>
+  </select>
+  <br/>
+  <label for="statusSelect">Choose status:</label>
+  <select id="statusSelect">
+    <option value="OPEN">OPEN</option>
+    <option value="APPROVED">APPROVED</option>
+    <option value="CLOSED">CLOSED</option>
+  </select>
+  <br/>
+  <button onclick="lookupPermits()">Look up</button>
+
+  <div id="status"></div>
+  <table id="results" style="display:none">
+    <thead><tr><th>Permit ID</th><th>Type</th><th>Status</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function lookupPermits() {
+      const street = document.getElementById('street').value;
+      const selectedStatus = document.getElementById('statusSelect').value;
+      const statusEl = document.getElementById('status');
+      const table = document.getElementById('results');
+      const tbody = table.querySelector('tbody');
+
+      statusEl.textContent = 'Loading...';
+      table.style.display = 'none';
+      tbody.innerHTML = '';
+
+      try {
+        const response = await fetch('/api/permits?street=' + encodeURIComponent(street) + '&status=' + encodeURIComponent(selectedStatus));
+        const permits = await response.json();
+
+        statusEl.textContent = `Status ${response.status} — ${permits.length}, ${selectedStatus} permit(s) found.`;
+
+        if (permits.length > 0) {
+          permits.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${p.permitId}</td><td>${p.type}</td><td>${p.status}</td>`;
+            tbody.appendChild(row);
+          });
+          table.style.display = 'table';
+        }
+      } catch (err) {
+        statusEl.textContent = 'Request failed: ' + err;
+      }
+    }
+  </script>
+</body>
+</html>
